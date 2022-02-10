@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "napoletano"
+version = "0.1.0"
+description = ""
+authors = ["Baptiste Fontaine <b@ptistefontaine.fr>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+pdfplumber = "^0.6.0"
+
+[tool.poetry.dev-dependencies]
+pdfplumber = "^0.6.0"
+mypy = "^0.931"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
