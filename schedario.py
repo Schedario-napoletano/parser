@@ -1,5 +1,5 @@
 import io
-from collections import namedtuple
+from dataclasses import dataclass
 from typing import Tuple, List, Optional
 
 import re
@@ -11,6 +11,10 @@ MARGIN_TOP = 0.0
 MARGIN_LEFT = 50.0
 MARGIN_RIGHT = 50.0
 MARGIN_BOTTOM = 70.0
+
+# number of points from the top of the first column of the first page that we should ignore because they contain
+# the title of the document.
+START_TOP = 71.0
 
 FILES = (
     # filename -> first page
@@ -33,7 +37,13 @@ BOLD_FONTS = {"Times-Bold", "Times-BoldItalic"}
 ITALIC_FONTS = {"Times-Italic", "Times-BoldItalic", "ODNMDG+TTE2D6BEA8t00"}
 ALL_FONTS = SIMPLE_FONTS | BOLD_FONTS | ITALIC_FONTS
 
-Fragment = namedtuple("Fragment", ("indent", "text", "bold", "italic"))
+
+@dataclass
+class Fragment:
+    indent: float
+    text: str
+    bold: bool
+    italic: bool
 
 
 def get_column_x0_x1(page_width: int, column_index: int) -> Tuple[float, float]:
@@ -69,11 +79,12 @@ def _parse_fragments_from_column(column: Page, skip_intro=False):
     index = 0
 
     if skip_intro:
-        # Skip "S C H E D A R I O   N A P O L E T A N O" + "A"
-        # TODO we need to skip the other letters as well
+        # Skip "S C H E D A R I O   N A P O L E T A N O" but not the letter "A"
         while True:
-            current: str = fragments[index]["text"]
-            if current.isspace() or current.upper() == current:
+            fragment = fragments[index]
+            top: float = fragment["top"]
+            text: str = fragment["text"]
+            if text.isspace() or (text.upper() == text and top < START_TOP):
                 index += 1
                 continue
 
@@ -106,7 +117,7 @@ def _parse_fragments_from_column(column: Page, skip_intro=False):
 def parse_fragments_from_page(page: Page, skip_intro=False):
     for column_index in range(COLUMNS_COUNT):
         column = get_column(page, column_index)
-        yield from _parse_fragments_from_column(column,skip_intro=skip_intro if column_index == 0 else False)
+        yield from _parse_fragments_from_column(column, skip_intro=skip_intro if column_index == 0 else False)
 
 
 def parse_fragments():
@@ -117,6 +128,10 @@ def parse_fragments():
             is_first_page = True
             for page_index, page in enumerate(pdf.pages[first_page:]):
                 print("Page", page_index + first_page + 1)
+
+                # for debugging
+                # if filename == "1.pdf" and first_page + first_page + 1 < page_index + first_page + 1 < 72:
+                #     continue
 
                 # if filename == "1.pdf" and page_index in {10, 13, 31, 33, 37}:
                 #     continue  # skip problematic pages for now

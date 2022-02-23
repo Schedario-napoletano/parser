@@ -1,18 +1,20 @@
 import argparse
+import string
 from typing import List, Tuple, Iterable, Optional
-
 import logging
-
 import re
 
 import schedario
+
+INDENT_TOLERANCE = 0.0005
+LETTER_MIN_INDENT = 60.0
 
 logger = logging
 
 Word = str
 
 
-class Definition: # XXX redo
+class Definition:  # XXX redo
     def __init__(self,
                  definition: Optional[str] = None,
                  alias_of: Optional[str] = None):
@@ -53,13 +55,48 @@ class Definition: # XXX redo
 Entry = Tuple[Word, Definition]
 
 
-
 class SchedarioParser:
     def __init__(self):
         pass
 
-    def parse(self) -> Iterable[Entry]: # XXX redo
-        fragments = schedario.parse_fragments()
+    def parse(self) -> Iterable[Entry]:
+        current_letter: Optional[str] = None
+        current_indent = 0
+        current_fragments: List[schedario.Fragment] = []
+
+        known_letters = set(string.ascii_uppercase)
+
+        for fragment in schedario.parse_fragments():
+            if fragment.text.isspace():
+                continue
+
+            stripped_text = fragment.text.strip()
+
+            if fragment.indent > LETTER_MIN_INDENT and fragment.bold and re.match(r"[A-Z]$", stripped_text):
+                # TODO: also close the current definition
+
+                # This is a false-positive in the middle of a word. It's the only one in the whole document, so it's
+                # simpler to ignore it here rather than make complicated code to automatically detect it.
+                if current_letter == stripped_text == "P":
+                    continue
+
+                current_letter = stripped_text
+                print("Letter:", current_letter)
+                known_letters.remove(current_letter)
+                continue
+
+            # fragment close to the left: start of a definition
+            if fragment.indent <= INDENT_TOLERANCE:
+                if not fragment.bold:
+                    # This letter contains only some text
+                    if current_letter == "J":
+                        continue
+
+                    print("!!NOT BOLD!!", fragment)
+
+        print("remaining letters:", known_letters)
+
+            # TODO
 
     def parse_column_words(self, parts: List[dict], index: int):
         while index < len(parts):
@@ -100,16 +137,9 @@ class SchedarioParser:
     def make_definition(self, definition_dicts: List[dict], word: str) -> Definition:
         definition = schedario.make_definition_text(definition_dicts)
 
+        # "v. <word>" = "see this other word"
         if m := re.match(r"^v\s?\. +(\w+)\.?", definition, flags=re.UNICODE):
             return Definition(alias_of=m.group(1).rstrip("."))
-
-        # not really relevant with HTML markup
-        # if definition.startswith("v") and not word.startswith("v"):
-        #     logger.warning(f"Word {word} definition starts with v: {definition}")
-        # elif len(definition) < 4:
-        #     logger.warning(f"Word {word} definition is very short: {definition}")
-        # elif definition[-1] not in ".!":
-        #     logger.warning(f"Word {word} definition doesn't end with a dot: {definition}")
 
         return Definition(definition=definition)
 
