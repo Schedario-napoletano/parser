@@ -1,6 +1,6 @@
 import io
 from dataclasses import dataclass
-from typing import Tuple, List, Optional
+from typing import Tuple, List, Optional, Iterator, Iterable
 
 import re
 
@@ -40,10 +40,47 @@ ALL_FONTS = SIMPLE_FONTS | BOLD_FONTS | ITALIC_FONTS
 
 @dataclass
 class Fragment:
-    indent: float
     text: str
     bold: bool
     italic: bool
+
+    def compress(self, strip_right=False):
+        if strip_right:
+            self.text = self.text.rstrip()
+
+        if not self.text:
+            self.bold = False
+            self.italic = False
+        elif self.text.isspace():
+            self.text = " "
+            self.bold = False
+            self.italic = False
+
+        return self
+
+    def as_html(self):
+        t = self.text
+        if t.isspace() or not t:
+            return t
+        if self.bold:
+            t = f"<b>{t}</b>"
+        if self.italic:
+            t = f"<i>{t}</i>"
+        return t
+
+    def as_md(self):
+        """
+        Return a markdown representation of the fragment. This can be convenient to have a concise representation
+        in the terminal.
+        """
+        t = self.text
+        if t.isspace() or not t:
+            return t
+        if self.bold:
+            t = f"**{t}**"
+        if self.italic:
+            t = f"_{t}_"
+        return t
 
 
 def get_column_x0_x1(page_width: int, column_index: int) -> Tuple[float, float]:
@@ -107,8 +144,7 @@ def _parse_fragments_from_column(column: Page, skip_intro=False):
             # Not sure what it is: it's rare and most of the time invisible. In one occurrence it looks like a ";".
             continue
 
-        yield Fragment(
-            indent=indent,
+        yield indent, Fragment(
             text=fragment["text"],
             bold=font in BOLD_FONTS,
             italic=font in ITALIC_FONTS)
@@ -120,7 +156,7 @@ def parse_fragments_from_page(page: Page, skip_intro=False):
         yield from _parse_fragments_from_column(column, skip_intro=skip_intro if column_index == 0 else False)
 
 
-def parse_fragments():
+def parse_indented_fragments() -> Iterator[Tuple[float, Fragment]]:
     for filename, first_page in FILES:
         print("File", filename)
 
@@ -140,6 +176,42 @@ def parse_fragments():
                 is_first_page = False
 
 
+def _is_punctuation(s: str):
+    return s.strip() in PUNCTUATION
+
+
+def compress_fragments(fragments: Iterable[Fragment]) -> Iterator[Fragment]:
+    """
+    Reduce the number of fragments in input by combining them as much as possible.
+    """
+    current_fragment: Optional[Fragment] = None
+    for fragment in fragments:
+        if current_fragment is None:
+            current_fragment = fragment
+            continue
+
+        if fragment.bold == current_fragment.bold and fragment.italic == current_fragment.italic:
+            current_fragment.text += fragment.text
+            continue
+
+        # Don't leave punctuation alone
+        if not current_fragment.bold and not current_fragment.italic and _is_punctuation(fragment.text):
+            current_fragment.text += fragment.text.strip()
+            continue
+
+        yield current_fragment.compress()
+        current_fragment = fragment
+
+    if current_fragment:
+        # This is the last one: strip trailing spaces
+        if current_fragment.text.isspace():
+            return
+
+        yield current_fragment.compress(strip_right=True)
+
+
+# ##### Old code for reference ##############################
+
 def apply_font(text: str, font: str):
     if not text or text.isspace():
         return text
@@ -156,6 +228,7 @@ def apply_font(text: str, font: str):
     return text
 
 
+# XXX remove me once we've included all the useful code above
 def make_definition_text(word_dicts: List[dict]):
     words = []
     current_word_fragments: List[str] = []
@@ -175,10 +248,12 @@ def make_definition_text(word_dicts: List[dict]):
             words.append(apply_font(part_text, font))
             continue
 
+        # TODO import in compress_fragments
         if part_text in PUNCTUATION and current_word_fragments:
             # remove trailing spaces before punctuation
             current_word_fragments[-1] = current_word_fragments[-1].rstrip()
 
+        # TODO import in compress_fragments
         if current_font != font:
             if part_text in PUNCTUATION:
                 # include punctuation in the current font part otherwise we have things like:
@@ -207,6 +282,7 @@ def make_definition_text(word_dicts: List[dict]):
     text_writer.seek(0)
     text = text_writer.read()
 
+    # TODO idem
     text = text.strip()
     # remove spaces before dots and columns
     text = re.sub(r"\s+([.:])", "\\1", text)
