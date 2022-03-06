@@ -5,7 +5,7 @@ import extract
 
 def test_file1_page1_column_1():
     n = 28
-    defs = list(clj.take(n, extract.parse_definitions()))
+    defs = clj.take(n, extract.parse_definitions())
 
     words = [d.word for d in defs]
     assert len(words) == n
