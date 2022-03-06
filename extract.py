@@ -192,7 +192,7 @@ class BaseDefinition:
 
 
 class RawDefinition(BaseDefinition):
-    template = "markdown"
+    template = "html"
 
     def __init__(self, word: str, initial_letter: str, fragments: List[schedario.Fragment],
                  *, qualifier: Optional[Qualifier] = None):
@@ -205,7 +205,7 @@ class RawDefinition(BaseDefinition):
 
     def as_dict(self):
         d = super().as_dict()
-        d["markdown_text"] = ' '.join(fragment.as_md() for fragment in self.fragments)
+        d["html"] = simplify_html(' '.join(fragment.as_html() for fragment in self.fragments))
         return d
 
 
@@ -227,7 +227,7 @@ class DerivativeDefinition(BaseDefinition):
     def as_dict(self):
         d = super().as_dict()
         d["qualifier"] = "da" if self.qualifier == "da" else self.qualifier + " di"
-        d["derive_from"] = self.derive_from
+        d["target"] = self.derive_from
         return d
 
 
@@ -243,8 +243,15 @@ class AliasDefinition(BaseDefinition):
 
     def as_dict(self):
         d = super().as_dict()
-        d["alias_of"] = self.alias_of
+        d["target"] = self.alias_of
         return d
+
+
+def simplify_html(html: str) -> str:
+    html = re.sub(r"</b>(\s*)<b>", "\\1", html)
+    html = re.sub(r"</i>(\s*)<i>", "\\1", html)
+
+    return html
 
 
 def parse_qualifier(s: str, word_text: str) -> Tuple[Optional[Qualifier], bool]:
@@ -382,7 +389,7 @@ def entry2definition(entry):
             and fragments[0].bold \
             and len(fragments) == 1 \
             and re.match(r"^([ ,’!a-zA-ZìàùèéÀÙÈÉ]+)\s*\.?$", plain_text):
-        return DerivativeDefinition(word_text, entry.initial_letter, fragments[0].text.strip(), qualifier=qualifier)
+        return DerivativeDefinition(word_text, entry.initial_letter, fragments[0].text.strip(" ."), qualifier=qualifier)
 
     return RawDefinition(word_text, entry.initial_letter, fragments, qualifier=qualifier)
 
