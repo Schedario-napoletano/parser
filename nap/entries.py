@@ -126,13 +126,6 @@ def parse_indented_fragments() -> Iterator[Tuple[float, Fragment]]:
             for page_index, page in enumerate(pdf.pages[first_page:]):
                 print("Page", page_index + first_page + 1)
 
-                # for debugging
-                # if filename == "1.pdf" and first_page + first_page + 1 < page_index + first_page + 1 < 72:
-                #     continue
-
-                # if filename == "1.pdf" and page_index in {10, 13, 31, 33, 37}:
-                #     continue  # skip problematic pages for now
-
                 yield from parse_fragments_from_page(page, skip_intro=is_first_page)
                 is_first_page = False
 
@@ -158,6 +151,9 @@ def parse_entries() -> Iterator[Entry]:
             # This is a false-positive in the middle of a word. It's the only one in the whole document, so it's
             # simpler to ignore it here rather than make complicated code to automatically detect it.
             if current_letter == stripped_text == "P":
+                # TODO: maybe yield the entry, so it'll be merged with the rest of the text and avoid the
+                #   'antico nome di Villaricca' issue in definitions.py.
+                # yield Entry([fragment], "P")
                 continue
 
             current_letter = stripped_text
