@@ -1,5 +1,6 @@
 import argparse
 import string
+from collections import defaultdict
 from typing import List, Optional, Iterator, Union, Dict, Tuple
 import logging
 import re
@@ -163,8 +164,9 @@ RE_ABBR = re.compile(r"^(%s)((?:\s*\.?\s+|\.)di)?$" % "|".join(re.escape(abbr) f
 
 
 class Entry:
-    def __init__(self, fragments: List[schedario.Fragment]):
+    def __init__(self, fragments: List[schedario.Fragment], initial_letter: str):
         self.fragments = list(schedario.compress_fragments(fragments))
+        self.initial_letter = initial_letter
 
     def as_md(self, sep=" "):
         return sep.join(fragment.as_md() for fragment in self.fragments)
@@ -173,9 +175,10 @@ class Entry:
 class BaseDefinition:
     template = ""
 
-    def __init__(self, word: str, *, qualifier: Optional[Qualifier] = None):
+    def __init__(self, word: str, initial_letter: str, *, qualifier: Optional[Qualifier] = None):
         self.word = word
         self.qualifier = qualifier
+        self.initial_letter = initial_letter
 
     def as_md(self):
         raise NotImplementedError()
@@ -191,8 +194,9 @@ class BaseDefinition:
 class RawDefinition(BaseDefinition):
     template = "markdown"
 
-    def __init__(self, word: str, fragments: List[schedario.Fragment], *, qualifier: Optional[Qualifier] = None):
-        super().__init__(word, qualifier=qualifier)
+    def __init__(self, word: str, initial_letter: str, fragments: List[schedario.Fragment],
+                 *, qualifier: Optional[Qualifier] = None):
+        super().__init__(word, initial_letter, qualifier=qualifier)
         self.fragments = fragments
 
     def as_md(self):
@@ -208,8 +212,8 @@ class RawDefinition(BaseDefinition):
 class DerivativeDefinition(BaseDefinition):
     template = "derivative"
 
-    def __init__(self, word: str, derive_from: str, **kwargs):
-        super().__init__(word, **kwargs)
+    def __init__(self, word: str, initial_letter: str, derive_from: str, **kwargs):
+        super().__init__(word, initial_letter, **kwargs)
         self.derive_from = derive_from
 
     def as_md(self):
@@ -230,8 +234,8 @@ class DerivativeDefinition(BaseDefinition):
 class AliasDefinition(BaseDefinition):
     template = "alias"
 
-    def __init__(self, word: str, alias_of: str, **kwargs):
-        super().__init__(word, **kwargs)
+    def __init__(self, word: str, initial_letter: str, alias_of: str, **kwargs):
+        super().__init__(word, initial_letter, **kwargs)
         self.alias_of = alias_of
 
     def as_md(self):
@@ -287,7 +291,7 @@ def parse_entries() -> Iterator[Entry]:
         # Big letters
         if indent > LETTER_MIN_INDENT and fragment.bold and re.match(r"[A-Z]$", stripped_text):
             if current_fragments:
-                yield Entry(current_fragments)
+                yield Entry(current_fragments, current_letter)
                 current_fragments = []
 
             # This is a false-positive in the middle of a word. It's the only one in the whole document, so it's
@@ -318,13 +322,13 @@ def parse_entries() -> Iterator[Entry]:
 
             # yield the current definition (if any) and start a new one
             if current_fragments:
-                yield Entry(current_fragments)
+                yield Entry(current_fragments, current_letter)
                 current_fragments = []
 
         current_fragments.append(fragment)
 
     if current_fragments:
-        yield Entry(current_fragments)
+        yield Entry(current_fragments, current_letter)
 
     if known_letters:
         print("remaining letters:", known_letters)
@@ -352,14 +356,14 @@ def entry2definition(entry):
             fragments = [word]
         elif m := re.match(r"^(\w+) v\. (\w+)\.?$", word_text, flags=re.UNICODE):
             # **felariéllo v. filariéllo.**
-            return AliasDefinition(m.group(1), m.group(2))
+            return AliasDefinition(m.group(1), entry.initial_letter, m.group(2))
         else:
             raise RuntimeError("Empty definition: %s" % entry.as_md())
 
     plain_text = " ".join(fragment.text for fragment in fragments).strip()
 
     if m := RE_SEE_ALSO.match(plain_text):
-        return AliasDefinition(word_text, m.group(1))
+        return AliasDefinition(word_text, entry.initial_letter, m.group(1))
 
     qualifier: Optional[Qualifier] = None
     derivative = False
@@ -371,16 +375,16 @@ def entry2definition(entry):
         if qualifier:
             fragments = fragments[1:]
         else:
-            print("CANT PARSE QUALIFIER:", fragments[0], "--", word, fragments[:5])
+            print("CAN’T PARSE QUALIFIER:", fragments[0], "for word", word)
 
     # basic definition
     if derivative \
             and fragments[0].bold \
             and len(fragments) == 1 \
             and re.match(r"^([ ,’!a-zA-ZìàùèéÀÙÈÉ]+)\s*\.?$", plain_text):
-        return DerivativeDefinition(word_text, fragments[0].text.strip(), qualifier=qualifier)
+        return DerivativeDefinition(word_text, entry.initial_letter, fragments[0].text.strip(), qualifier=qualifier)
 
-    return RawDefinition(word_text, fragments, qualifier=qualifier)
+    return RawDefinition(word_text, entry.initial_letter, fragments, qualifier=qualifier)
 
 
 def parse_definitions():
@@ -406,12 +410,12 @@ def main():
     opts = p.parse_args()
 
     json_path = opts.json
-    json_definitions: List[dict] = []
+    json_definitions: Dict[str, List[dict]] = defaultdict(list)
 
     try:
         for definition in parse_definitions():
             if json_path:
-                json_definitions.append(definition.as_dict())
+                json_definitions[definition.initial_letter].append(definition.as_dict())
     except (KeyboardInterrupt, BrokenPipeError):
         pass
     finally:
