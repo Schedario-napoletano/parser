@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Iterable
 
 Word = str
 Qualifier = str
@@ -11,19 +11,9 @@ class Fragment:
     bold: bool
     italic: bool
 
-    def compress(self, strip_right=False):
-        if strip_right:
-            self.text = self.text.rstrip()
-
-        if not self.text:
-            self.bold = False
-            self.italic = False
-        elif self.text.isspace():
-            self.text = " "
-            self.bold = False
-            self.italic = False
-
-        return self
+    def strip_formatting(self):
+        self.bold = False
+        self.italic = False
 
     def as_html(self):
         t = self.text
@@ -51,8 +41,8 @@ class Fragment:
 
 
 class Entry:
-    def __init__(self, fragments: List[Fragment], initial_letter: str):
-        self.fragments = fragments
+    def __init__(self, fragments: Iterable[Fragment], initial_letter: str):
+        self.fragments = list(fragments)
         self.initial_letter = initial_letter
 
     def as_md(self, sep=" "):

@@ -7,6 +7,7 @@ import pdfplumber
 from pdfplumber.page import Page
 
 from nap.models import Fragment, Entry
+from nap.normalization import compress_fragments
 
 SIMPLE_FONTS = {"Times-Roman", "ODNMDG+TTE2D674C8t00", "Courier", "ODNMDG+TTE2D6D9E8t00", "ODNMDG+TTE16BE550t00"}
 BOLD_FONTS = {"Times-Bold", "Times-BoldItalic"}
@@ -151,7 +152,7 @@ def parse_entries() -> Iterator[Entry]:
         # Big letters
         if indent > LETTER_MIN_INDENT and fragment.bold and re.match(r"[A-Z]$", stripped_text):
             if current_fragments:
-                yield Entry(current_fragments, cast(str, current_letter))
+                yield Entry(compress_fragments(current_fragments), cast(str, current_letter))
                 current_fragments = []
 
             # This is a false-positive in the middle of a word. It's the only one in the whole document, so it's
@@ -182,13 +183,13 @@ def parse_entries() -> Iterator[Entry]:
 
             # yield the current definition (if any) and start a new one
             if current_fragments:
-                yield Entry(current_fragments, cast(str, current_letter))
+                yield Entry(compress_fragments(current_fragments), cast(str, current_letter))
                 current_fragments = []
 
         current_fragments.append(fragment)
 
     if current_fragments:
-        yield Entry(current_fragments, cast(str, current_letter))
+        yield Entry(compress_fragments(current_fragments), cast(str, current_letter))
 
     if known_letters:
         print("remaining letters:", known_letters)
