@@ -1,7 +1,7 @@
-from typing import Optional, Tuple, Dict, Union, List
+from typing import Optional, Tuple, Dict, Union, List, Iterable
 import re
 
-from nap.models import Qualifier, AliasDefinition, DerivativeDefinition, RawDefinition
+from nap.models import Qualifier, AliasDefinition, DerivativeDefinition, RawDefinition, Entry
 from nap.entries import parse_entries
 
 ABBREVIATIONS: Dict[str, Union[str, List[str]]] = {
@@ -228,9 +228,12 @@ def entry2definition(entry):
     return RawDefinition(word_text, entry.initial_letter, fragments, qualifier=qualifier)
 
 
-def parse_definitions():
-    for entry in parse_entries():
-        first_text = entry.fragments[0].text
+def parse_definitions(entries: Optional[Iterable[Entry]] = None):
+    if entries is None:
+        entries = parse_entries()
+
+    for entry in entries:
+        first_text = entry.fragments[0].text.strip()
         # false-positives
         if first_text in {"g:", "pepaiuola:", "svettare.", "le parole che iniziano o la"} \
                 or first_text.startswith("nel passaggio dal latino,"):

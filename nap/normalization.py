@@ -7,13 +7,6 @@ from nap.models import Fragment
 PUNCTUATION = {".", ",", ";", ":", "!", "?", "…", "..."}
 
 
-def simplify_html(html: str) -> str:
-    html = re.sub(r"</b>(\s*)<b>", "\\1", html)
-    html = re.sub(r"</i>(\s*)<i>", "\\1", html)
-
-    return html
-
-
 def _is_punctuation(s: str):
     return s.strip() in PUNCTUATION
 
@@ -45,6 +38,7 @@ def compress_fragments(fragments: Iterable[Fragment]) -> Iterator[Fragment]:
     Reduce the number of fragments in input by combining them as much as possible.
     """
     # TODO: '<b>foo</b>', ' ', '<b>bar</b>' == '<b>foo bar</b>'
+    # TODO: '<i>foo</i>', ' . bar' == '<i>foo</i>', '. bar'
 
     current_fragment: Optional[Fragment] = None
     for fragment in fragments:

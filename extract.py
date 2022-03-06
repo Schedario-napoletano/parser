@@ -22,6 +22,10 @@ def main():
         pass
     finally:
         if json_path:
+            # This can happen on partial runs
+            if None in json_definitions:
+                del json_definitions[None]  # type: ignore
+
             with open(json_path, "w") as f:
                 json.dump(json_definitions, f, sort_keys=True, ensure_ascii=False)
 
