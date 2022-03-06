@@ -245,4 +245,6 @@ def parse_definitions(entries: Optional[Iterable[Entry]] = None):
             entry.fragments[0].bold = True
             entry.fragments[1].italic = False
 
+        # TODO some entries are merged together: "viécchio-vècchia"
+
         yield entry2definition(entry)
