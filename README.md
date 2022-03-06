@@ -1,8 +1,11 @@
 # Schedario napoletano (parser)
 
-This repository contains code to extract the content of the [<i>Schedario napoletano</i> by Giuseppe Giacco][1] PDF files.
+This repository contains code to extract the definitions from the two PDF files of the
+[<i>Schedario napoletano</i>][1] written by Giuseppe Giacco.
 
 As of 2022/02/10 this extracts 22087 definitions.
+
+This is still a work in progress.
 
 [1]: http://www.vesuvioweb.com/it/2012/01/giuseppe-giacco-schedario-napoletano/
 
@@ -12,3 +15,7 @@ Download both parts of the Schedario as `1.pdf` and `2.pdf`.
 Then run:
 
     poetry run python extract.py --json definitions.json
+
+The output JSON can then be used to generate [the website][w].
+
+[w]: https://github.com/Schedario-napoletano/website/tree/main/_data
