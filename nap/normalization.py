@@ -11,15 +11,15 @@ def _is_punctuation(s: str):
     return s.strip() in PUNCTUATION
 
 
-def compress_fragment(fragment, strip_right=False):
+def compress_fragment(fragment: Fragment, strip_right=False):
     """
     Compress a fragment in-place.
     """
     fragment.text = re.sub(r"\s+", " ", fragment.text)
     # # remove spaces before dots and columns
     fragment.text = re.sub(r" ([.:])", "\\1", fragment.text)
-    # add a space after commas if needed
-    fragment.text = re.sub(r"([,;])(?=\w)", "\\1 ", fragment.text, flags=re.UNICODE)
+    # add a space after commas if needed; remove spaces before
+    fragment.text = re.sub(r"\s*([,;])(?=\w)", "\\1 ", fragment.text, flags=re.UNICODE)
 
     if strip_right:
         fragment.text = fragment.text.rstrip()
@@ -37,9 +37,6 @@ def compress_fragments(fragments: Iterable[Fragment]) -> Iterator[Fragment]:
     """
     Reduce the number of fragments in input by combining them as much as possible.
     """
-    # TODO: '<b>foo</b>', ' ', '<b>bar</b>' == '<b>foo bar</b>'
-    # TODO: '<i>foo</i>', ' . bar' == '<i>foo</i>', '. bar'
-
     current_fragment: Optional[Fragment] = None
     for fragment in fragments:
         fragment = compress_fragment(fragment)
@@ -48,13 +45,16 @@ def compress_fragments(fragments: Iterable[Fragment]) -> Iterator[Fragment]:
             current_fragment = fragment
             continue
 
-        # same formatting: append it
-        if fragment.bold == current_fragment.bold and fragment.italic == current_fragment.italic:
+        # same formatting or space: append it
+        # Note this means "<b>foo</b> <i>bar</i>" may become "<b>foo </b><i>bar</i>"
+        if (fragment.bold == current_fragment.bold and fragment.italic == current_fragment.italic) \
+                or fragment.text.isspace():
             current_fragment.text += fragment.text
             continue
 
         if _is_punctuation(fragment.text):
             # Don't leave punctuation alone
+            # Note this could be challenged: "<i>foo</i>." may be better than "<i>foo.</i>".
             current_fragment.text = current_fragment.text.rstrip() + fragment.text.lstrip()
             continue
 

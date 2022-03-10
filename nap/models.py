@@ -8,12 +8,16 @@ Qualifier = str
 @dataclass
 class Fragment:
     text: str
-    bold: bool
-    italic: bool
+    bold: bool = False
+    italic: bool = False
 
     def strip_formatting(self):
         self.bold = False
         self.italic = False
+
+    def copy(self):
+        # noinspection PyArgumentList
+        return self.__class__(text=self.text, bold=self.bold, italic=self.italic)
 
     def as_html(self):
         t = self.text

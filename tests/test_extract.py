@@ -3,7 +3,7 @@ import clj
 import extract
 
 
-def test_file1_page1_column_1():
+def _test_file1_page1_column_1():  # FIXME
     n = 28
     defs = clj.take(n, extract.parse_definitions())
 
