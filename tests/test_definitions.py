@@ -1,10 +1,10 @@
 import clj
-import pytest
 
 from nap import definitions
+from nap.models import Fragment, Entry, AliasDefinition
 
 
-def _test_file1_page1_column_1():  # FIXME
+def test_file1_page1_column_1():
     n = 28
     defs = clj.take(n, definitions.parse_definitions())
 
@@ -20,3 +20,15 @@ def _test_file1_page1_column_1():  # FIXME
         "abbagaglià", "abbaglià", "abbagliamento", "abbagliamiénto", "abbagliato",
         "abbaglio", "abbagnà",
     ]
+
+
+def test_alias_with_hyphen_and_space():
+    entry = Entry(
+        [Fragment('abbasta che-ca ', bold=True),
+         Fragment('v.', italic=True),
+         Fragment(' basta che-ca.', bold=True)], initial_letter="A")
+
+    definition = definitions.entry2definition(entry)
+    assert isinstance(definition, AliasDefinition)
+    assert definition.word == "abbasta che-ca"
+    assert definition.alias_of == "basta che-ca"

@@ -60,6 +60,8 @@ class BaseDefinition:
         self.word = word
         self.qualifier = qualifier
         self.initial_letter = initial_letter
+        # for debugging
+        self._fragments: Optional[List[Fragment]] = None
 
     def as_md(self):
         raise NotImplementedError()

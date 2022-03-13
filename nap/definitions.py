@@ -140,7 +140,7 @@ ABBREVIATIONS: Dict[str, Union[str, List[str]]] = {
     "tronc. e voc": "troncamento e vocativo",
 }
 
-RE_SEE_ALSO = re.compile(r"^v\s*\. +(\w+)\s*\.?$", flags=re.UNICODE)
+RE_SEE_ALSO = re.compile(r"^v\s*\. +(\w[- \w]*)\s*\.?$", flags=re.UNICODE)
 
 # "abbr", "abbr.di", "abbr di", "abbr. di", "abbr . di"
 RE_ABBR = re.compile(r"^(%s)\s*((?:\.|\.?\s+)di)?$" % "|".join(re.escape(abbr) for abbr in ABBREVIATIONS),
@@ -189,6 +189,7 @@ def entry2definition(entry):
 
     # sometimes the colon is in its own fragment
     if len(fragments) > 2 and fragments[0].text.strip() == ":":
+        # skip it
         fragments = fragments[1:]
 
     if not fragments:
@@ -247,4 +248,6 @@ def parse_definitions(entries: Optional[Iterable[Entry]] = None):
 
         # TODO some entries are merged together: "viécchio-vècchia"
 
-        yield entry2definition(entry)
+        definition = entry2definition(entry)
+        definition._fragments = entry.fragments
+        yield definition
