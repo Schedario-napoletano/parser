@@ -1,11 +1,12 @@
 import clj
+import pytest
 
-import extract
+from nap import definitions
 
 
 def _test_file1_page1_column_1():  # FIXME
     n = 28
-    defs = clj.take(n, extract.parse_definitions())
+    defs = clj.take(n, definitions.parse_definitions())
 
     words = [d.word for d in defs]
     assert len(words) == n
