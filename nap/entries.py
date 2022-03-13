@@ -28,6 +28,7 @@ START_TOP = 71.0
 # create false-negatives.
 #                  0.0005 is too low
 INDENT_TOLERANCE = 0.001
+
 # Minimum indentation of big letters 'A', 'B', 'C', etc.
 LETTER_MIN_INDENT = 60.0
 
@@ -70,6 +71,9 @@ def get_column(page: Page, column_index: int) -> Page:
 
 def _parse_fragments_from_column(column: Page, skip_intro=False):
     fragments = column.extract_words(
+        # This is necessary to properly match the 'ε' fragments that, because they are in a different font, are never
+        # well-aligned with the rest of the text on the same line.
+        use_text_flow=True,
         # consider as 'words' close characters that share the same value for these properties
         extra_attrs=["fontname", "size"],
         # keep spaces so that we get a bunch of words at once
