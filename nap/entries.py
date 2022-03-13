@@ -1,5 +1,5 @@
 import string
-from typing import Tuple, List, Optional, Iterator, cast
+from typing import Tuple, List, Optional, Iterator, cast, Iterable
 
 import re
 
@@ -24,9 +24,10 @@ MARGIN_BOTTOM = 70.0
 START_TOP = 71.0
 
 # This represents the max amount we tolerate on the left to consider a fragment as "first on the left".
-# It should be as low as possible such that it doesn't generate false-positives.
+# It should be as low as possible such that it doesn't create false-positives but also not too low so that it doesn't
+# create false-negatives.
 #                  0.0005 is too low
-INDENT_TOLERANCE = 0.0009
+INDENT_TOLERANCE = 0.001
 # Minimum indentation of big letters 'A', 'B', 'C', etc.
 LETTER_MIN_INDENT = 60.0
 
@@ -42,6 +43,8 @@ COLUMN_ABSCISSES = (
     (0.65, None),
 )
 COLUMNS_COUNT = len(COLUMN_ABSCISSES)
+
+IndentedFragment = Tuple[float, Fragment]
 
 
 def get_column_x0_x1(page_width: int, column_index: int) -> Tuple[float, float]:
@@ -117,7 +120,7 @@ def parse_fragments_from_page(page: Page, skip_intro=False):
         yield from _parse_fragments_from_column(column, skip_intro=skip_intro if column_index == 0 else False)
 
 
-def parse_indented_fragments() -> Iterator[Tuple[float, Fragment]]:
+def parse_indented_fragments() -> Iterator[IndentedFragment]:
     for filename, first_page in FILES:
         print("File", filename)
 
@@ -130,13 +133,16 @@ def parse_indented_fragments() -> Iterator[Tuple[float, Fragment]]:
                 is_first_page = False
 
 
-def parse_entries() -> Iterator[Entry]:
+def parse_entries(indented_fragments: Optional[Iterable[IndentedFragment]] = None) -> Iterator[Entry]:
     current_letter: Optional[str] = None
     current_fragments: List[Fragment] = []
 
     known_letters = set(string.ascii_uppercase) - {"K", "W", "X", "Y"}
 
-    for indent, fragment in parse_indented_fragments():
+    if indented_fragments is None:
+        indented_fragments = parse_indented_fragments()
+
+    for indent, fragment in indented_fragments:
         if fragment.text.isspace():
             continue
 
