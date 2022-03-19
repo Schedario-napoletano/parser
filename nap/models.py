@@ -54,7 +54,7 @@ class Entry:
 
 
 class BaseDefinition:
-    template = ""
+    definition_type = ""
 
     def __init__(self, word: str, initial_letter: str, *, qualifier: Optional[Qualifier] = None):
         self.word = word
@@ -68,14 +68,14 @@ class BaseDefinition:
 
     def as_dict(self):
         return {
-            "template": self.template,
+            "definition_type": self.definition_type,
             "word": self.word,
             "qualifier": self.qualifier,
         }
 
 
 class RawDefinition(BaseDefinition):
-    template = "html"
+    definition_type = "default"
 
     def __init__(self, word: str, initial_letter: str, fragments: List[Fragment],
                  *, qualifier: Optional[Qualifier] = None):
@@ -88,12 +88,12 @@ class RawDefinition(BaseDefinition):
 
     def as_dict(self):
         d = super().as_dict()
-        d["html"] = ' '.join(fragment.as_html() for fragment in self.fragments)
+        d["definition"] = ' '.join(fragment.as_html() for fragment in self.fragments)
         return d
 
 
 class DerivativeDefinition(BaseDefinition):
-    template = "derivative"
+    definition_type = "derivative"
 
     def __init__(self, word: str, initial_letter: str, derive_from: str, **kwargs):
         super().__init__(word, initial_letter, **kwargs)
@@ -115,7 +115,7 @@ class DerivativeDefinition(BaseDefinition):
 
 
 class AliasDefinition(BaseDefinition):
-    template = "alias"
+    definition_type = "alias"
 
     def __init__(self, word: str, initial_letter: str, alias_of: str, **kwargs):
         super().__init__(word, initial_letter, **kwargs)

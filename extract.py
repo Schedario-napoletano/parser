@@ -1,7 +1,6 @@
 import argparse
 import json
-from collections import defaultdict
-from typing import List, Dict
+from typing import List
 
 from nap import parse_definitions
 
@@ -12,20 +11,16 @@ def main():
     opts = p.parse_args()
 
     json_path = opts.json
-    json_definitions: Dict[str, List[dict]] = defaultdict(list)
+    json_definitions: List[dict] = []
 
     try:
         for definition in parse_definitions():
             if json_path:
-                json_definitions[definition.initial_letter].append(definition.as_dict())
+                json_definitions.append(definition.as_dict())
     except (KeyboardInterrupt, BrokenPipeError):
         pass
     finally:
         if json_path:
-            # This can happen on partial runs
-            if None in json_definitions:
-                del json_definitions[None]  # type: ignore
-
             with open(json_path, "w") as f:
                 json.dump(json_definitions, f, sort_keys=True, ensure_ascii=False)
 

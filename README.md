@@ -14,6 +14,6 @@ Then run:
 
     poetry run python extract.py --json definitions.json
 
-The output JSON can then be used to generate [the website][w].
+The output JSON can then be used to feed [the website][w].
 
 [w]: https://github.com/Schedario-napoletano/website/tree/main/_data
