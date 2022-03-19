@@ -1,4 +1,4 @@
-from typing import Optional, Tuple, Dict, Union, List, Iterable
+from typing import Optional, Tuple, Dict, Union, List, Iterable, Set
 import re
 
 from nap.models import Qualifier, AliasDefinition, DerivativeDefinition, RawDefinition, Entry
@@ -233,12 +233,20 @@ def parse_definitions(entries: Optional[Iterable[Entry]] = None):
     if entries is None:
         entries = parse_entries()
 
+    seen: Set[str] = set()
+
     for entry in entries:
         first_text = entry.fragments[0].text.strip()
         # false-positives
         if first_text in {"g:", "pepaiuola:", "svettare.", "le parole che iniziano o la"} \
                 or first_text.startswith("nel passaggio dal latino,"):
             continue
+
+        if first_text in seen:
+            # some definitions are duplicated: take the first one only
+            continue
+
+        seen.add(first_text)
 
         # See 1.pdf, p.114, on the middle left
         if first_text == ".:" and entry.fragments[1].text == "antico nome di Villaricca.":
