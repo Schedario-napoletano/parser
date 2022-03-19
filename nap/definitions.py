@@ -242,12 +242,6 @@ def parse_definitions(entries: Optional[Iterable[Entry]] = None):
                 or first_text.startswith("nel passaggio dal latino,"):
             continue
 
-        if first_text in seen:
-            # some definitions are duplicated: take the first one only
-            continue
-
-        seen.add(first_text)
-
         # See 1.pdf, p.114, on the middle left
         if first_text == ".:" and entry.fragments[1].text == "antico nome di Villaricca.":
             entry.fragments[0].text = "Panicuocolo:"
@@ -257,5 +251,12 @@ def parse_definitions(entries: Optional[Iterable[Entry]] = None):
         # TODO some entries are merged together: "viécchio-vècchia"
 
         definition = entry2definition(entry)
+
+        # Some definitions are duplicated
+        if definition.word in seen:
+            continue
+
+        seen.add(definition.word)
+
         definition._fragments = entry.fragments
         yield definition
