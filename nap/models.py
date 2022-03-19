@@ -71,6 +71,7 @@ class BaseDefinition:
             "definition_type": self.definition_type,
             "word": self.word,
             "qualifier": self.qualifier,
+            "initial_letter": self.initial_letter,
         }
 
 
