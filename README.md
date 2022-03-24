@@ -9,11 +9,11 @@ As of 2022/03/13 this extracts 22,401 unique definitions.
 
 ## Run
 
-Download both parts of the <i>Schedario</i> as `1.pdf` and `2.pdf`.
-Then run:
+Download both parts of the <i>Schedario</i> as `1.pdf` and `2.pdf`. Then run:
 
-    poetry run python extract.py --json definitions.json
+    poetry run python extract.py [<path>].
 
-The output JSON can then be used to feed [the website][w].
+The output JSON can then be used to feed [the website][w]. If `<path>` is not provided, it defaults
+to `definitions.json`.
 
 [w]: https://github.com/Schedario-napoletano/website/tree/main/_data

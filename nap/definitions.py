@@ -3,6 +3,7 @@ import re
 
 from nap.models import Qualifier, AliasDefinition, DerivativeDefinition, RawDefinition, Entry
 from nap.entries import parse_entries
+from nap.normalization import compress_html_definition
 
 ABBREVIATIONS: Dict[str, Union[str, List[str]]] = {
     "abbr": "abbreviazione",
@@ -264,3 +265,10 @@ def parse_definitions(entries: Optional[Iterable[Entry]] = None):
 
         definition._fragments = entry.fragments
         yield definition
+
+
+def parse_definition_dicts(entries: Optional[Iterable[Entry]] = None):
+    for definition in parse_definitions(entries):
+        definition_dict = definition.as_dict()
+
+        yield definition_dict
