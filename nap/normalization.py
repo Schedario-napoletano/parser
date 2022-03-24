@@ -16,10 +16,12 @@ def compress_fragment(fragment: Fragment, strip_right=False):
     Compress a fragment in-place.
     """
     fragment.text = re.sub(r"\s+", " ", fragment.text)
-    # # remove spaces before dots and columns
-    fragment.text = re.sub(r" ([.:])", "\\1", fragment.text)
+    # # remove spaces before dots, colons, closing parentheses
+    fragment.text = re.sub(r"\s+([.:)])", "\\1", fragment.text)
     # add a space after commas if needed; remove spaces before
     fragment.text = re.sub(r"\s*([,;])(?=\w)", "\\1 ", fragment.text, flags=re.UNICODE)
+    # remove spaces after open parentheses
+    fragment.text = re.sub(r"([(])\s+", "\\1", fragment.text)
 
     if strip_right:
         fragment.text = fragment.text.rstrip()

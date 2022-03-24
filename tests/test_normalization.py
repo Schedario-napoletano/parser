@@ -29,6 +29,8 @@ def test_compress_fragment(word):
 
     assert Fragment(" ") == n.compress_fragment(Fragment("   \n ", italic=True))
 
+    assert Fragment("(hey)") == n.compress_fragment(Fragment("( hey   )"))
+
 
 def test_compress_fragments(word):
     assert [] == list(n.compress_fragments([]))
@@ -56,3 +58,7 @@ def test_compress_fragments(word):
 
     assert [Fragment("ciao", italic=True), Fragment(". ciao")] == \
            list(n.compress_fragments([Fragment("ciao", italic=True), Fragment(" . ciao")]))
+
+    # Strip spaces inside parentheses
+    assert [Fragment("("), Fragment("volgare", italic=True), Fragment(")")] == \
+           list(n.compress_fragments([Fragment("( "), Fragment("volgare", italic=True), Fragment(" )")]))
