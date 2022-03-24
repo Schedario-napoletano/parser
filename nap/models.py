@@ -11,7 +11,7 @@ class Fragment:
     bold: bool = False
     italic: bool = False
 
-    def strip_formatting(self):
+    def remove_formatting(self):
         self.bold = False
         self.italic = False
 

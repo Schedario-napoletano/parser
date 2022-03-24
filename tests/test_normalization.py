@@ -11,8 +11,6 @@ def word():
 
 def test_compress_fragment(word):
     assert word == n.compress_fragment(word)
-    assert word == n.compress_fragment(word, strip_right=True)
-    assert word == n.compress_fragment(word, strip_left=True, strip_right=True)
 
     assert Fragment("a b") == n.compress_fragment(Fragment("a         b"))
     assert Fragment("a b") == n.compress_fragment(Fragment("a \n b"))
@@ -21,10 +19,9 @@ def test_compress_fragment(word):
     assert Fragment("a, b") == n.compress_fragment(Fragment("a ,b"))
 
     assert Fragment("a ") == n.compress_fragment(Fragment("a    "))
-    assert Fragment("a ") == n.compress_fragment(Fragment("a    "), strip_left=True)
-    assert Fragment("a") == n.compress_fragment(Fragment("a    "), strip_right=True)
-    assert Fragment("a") == n.compress_fragment(Fragment("   a"), strip_left=True)
-    assert Fragment(" a") == n.compress_fragment(Fragment("   a"), strip_right=True)
+    assert Fragment("a") == n.compress_fragment(Fragment("a    "), strip=True)
+    assert Fragment(" a ") == n.compress_fragment(Fragment("   a "))
+    assert Fragment("a") == n.compress_fragment(Fragment("   a "), strip=True)
 
     assert Fragment(".") == n.compress_fragment(Fragment(".", bold=True, italic=True))
 
@@ -46,10 +43,10 @@ def test_compress_fragments(word):
     assert [Fragment("a b", italic=True)] \
            == list(n.compress_fragments([Fragment("a   ", italic=True), Fragment(" b", italic=True)]))
 
-    assert [Fragment("a ", italic=True), Fragment(" b")] \
+    assert [Fragment("a", italic=True), Fragment("b")] \
            == list(n.compress_fragments([Fragment("a   ", italic=True), Fragment(" b")]))
 
-    assert [Fragment("a ", italic=True), Fragment(" b", bold=True)] \
+    assert [Fragment("a", italic=True), Fragment("b", bold=True)] \
            == list(n.compress_fragments([Fragment("a   ", italic=True), Fragment(" b", bold=True)]))
 
     assert [Fragment("a.", italic=True)] \

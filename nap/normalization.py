@@ -11,7 +11,7 @@ def _is_punctuation(s: str):
     return s.strip() in PUNCTUATION
 
 
-def compress_fragment(fragment: Fragment, *, strip_left=False, strip_right=False):
+def compress_fragment(fragment: Fragment, strip=False):
     """
     Compress a fragment in-place.
     """
@@ -23,17 +23,14 @@ def compress_fragment(fragment: Fragment, *, strip_left=False, strip_right=False
     # remove spaces after open parentheses
     fragment.text = re.sub(r"([(])\s+", "\\1", fragment.text)
 
-    if strip_left:
-        fragment.text = fragment.text.lstrip()
-
-    if strip_right:
-        fragment.text = fragment.text.rstrip()
-
     if _is_punctuation(fragment.text) or not fragment.text:
-        fragment.strip_formatting()
+        fragment.remove_formatting()
     elif fragment.text.isspace():
         fragment.text = " "
-        fragment.strip_formatting()
+        fragment.remove_formatting()
+
+    if strip:
+        fragment.text = fragment.text.strip()
 
     return fragment
 
@@ -43,7 +40,6 @@ def compress_fragments(fragments: Iterable[Fragment]) -> Iterator[Fragment]:
     Reduce the number of fragments in input by combining them as much as possible.
     """
     current_fragment: Optional[Fragment] = None
-    is_first = True
 
     for fragment in fragments:
         fragment = compress_fragment(fragment)
@@ -65,14 +61,12 @@ def compress_fragments(fragments: Iterable[Fragment]) -> Iterator[Fragment]:
             current_fragment.text = current_fragment.text.rstrip() + fragment.text.lstrip()
             continue
 
-        current_fragment = compress_fragment(current_fragment, strip_left=is_first)
+        current_fragment = compress_fragment(current_fragment, strip=True)
         if current_fragment.text:
-            is_first = False
             yield current_fragment
         current_fragment = fragment
 
     if current_fragment:
-        # This is the last one: strip trailing spaces
-        current_fragment = compress_fragment(current_fragment, strip_left=is_first, strip_right=True)
+        current_fragment = compress_fragment(current_fragment, strip=True)
         if current_fragment.text:
             yield current_fragment
