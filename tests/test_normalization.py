@@ -68,3 +68,8 @@ def test_compress_fragments(word):
     # Strip spaces inside parentheses
     assert [Fragment("("), Fragment("volgare", italic=True), Fragment(")")] == \
            list(n.compress_fragments([Fragment("( "), Fragment("volgare", italic=True), Fragment(" )")]))
+
+
+def test_compress_html():
+    # Remove spaces before dots
+    assert "<i>intr</i>. far qualcosa" == n.compress_html(" <i>intr</i> . far qualcosa")

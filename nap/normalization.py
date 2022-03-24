@@ -11,26 +11,32 @@ def _is_punctuation(s: str):
     return s.strip() in PUNCTUATION
 
 
+def compress_text(text: str, strip=False):
+    text = re.sub(r"\s+", " ", text)
+    # # remove spaces before dots, colons, closing parentheses
+    text = re.sub(r"\s+([.:)])", "\\1", text)
+    # add a space after commas/semicolons if needed; remove spaces before
+    text = re.sub(r"\s*([,;])(?=\w)", "\\1 ", text, flags=re.UNICODE)
+    # remove spaces after open parentheses
+    text = re.sub(r"([(])\s+", "\\1", text)
+
+    if strip:
+        text = text.strip()
+
+    return text
+
+
 def compress_fragment(fragment: Fragment, strip=False):
     """
     Compress a fragment in-place.
     """
-    fragment.text = re.sub(r"\s+", " ", fragment.text)
-    # # remove spaces before dots, colons, closing parentheses
-    fragment.text = re.sub(r"\s+([.:)])", "\\1", fragment.text)
-    # add a space after commas if needed; remove spaces before
-    fragment.text = re.sub(r"\s*([,;])(?=\w)", "\\1 ", fragment.text, flags=re.UNICODE)
-    # remove spaces after open parentheses
-    fragment.text = re.sub(r"([(])\s+", "\\1", fragment.text)
+    fragment.text = compress_text(fragment.text, strip=strip)
 
     if _is_punctuation(fragment.text) or not fragment.text:
         fragment.remove_formatting()
     elif fragment.text.isspace():
         fragment.text = " "
         fragment.remove_formatting()
-
-    if strip:
-        fragment.text = fragment.text.strip()
 
     return fragment
 
@@ -70,3 +76,7 @@ def compress_fragments(fragments: Iterable[Fragment]) -> Iterator[Fragment]:
         current_fragment = compress_fragment(current_fragment, strip=True)
         if current_fragment.text:
             yield current_fragment
+
+
+def compress_html(html: str) -> str:
+    return compress_text(html, strip=True)
