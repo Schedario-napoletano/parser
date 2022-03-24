@@ -66,13 +66,16 @@ class BaseDefinition:
     def as_md(self):
         raise NotImplementedError()
 
-    def as_dict(self):
-        return {
+    def as_dict(self, debug=False):
+        d = {
             "definition_type": self.definition_type,
             "word": self.word,
             "qualifier": self.qualifier,
             "initial_letter": self.initial_letter,
         }
+        if debug and self._fragments:
+            d["_fragments"] = [f.as_md() for f in self._fragments]
+        return d
 
 
 class RawDefinition(BaseDefinition):
@@ -87,8 +90,8 @@ class RawDefinition(BaseDefinition):
         q = f"_{self.qualifier}_ " if self.qualifier else ""
         return f"{self.word}: {q}{' '.join(fragment.as_md() for fragment in self.fragments)}"
 
-    def as_dict(self):
-        d = super().as_dict()
+    def as_dict(self, debug=False):
+        d = super().as_dict(debug=debug)
         d["definition"] = ' '.join(fragment.as_html() for fragment in self.fragments)
         return d
 
@@ -108,8 +111,8 @@ class DerivativeDefinition(BaseDefinition):
 
         return f"{self.word}: _{q}_ {self.derive_from}"
 
-    def as_dict(self):
-        d = super().as_dict()
+    def as_dict(self, debug=False):
+        d = super().as_dict(debug=debug)
         d["qualifier"] = "da" if self.qualifier == "da" else self.qualifier + " di"
         d["target"] = self.derive_from
         return d
@@ -125,7 +128,7 @@ class AliasDefinition(BaseDefinition):
     def as_md(self):
         return f"{self.word} → {self.alias_of}"
 
-    def as_dict(self):
-        d = super().as_dict()
+    def as_dict(self, debug=False):
+        d = super().as_dict(debug=debug)
         d["target"] = self.alias_of
         return d
