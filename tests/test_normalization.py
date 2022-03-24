@@ -12,6 +12,7 @@ def word():
 def test_compress_fragment(word):
     assert word == n.compress_fragment(word)
     assert word == n.compress_fragment(word, strip_right=True)
+    assert word == n.compress_fragment(word, strip_left=True, strip_right=True)
 
     assert Fragment("a b") == n.compress_fragment(Fragment("a         b"))
     assert Fragment("a b") == n.compress_fragment(Fragment("a \n b"))
@@ -20,7 +21,10 @@ def test_compress_fragment(word):
     assert Fragment("a, b") == n.compress_fragment(Fragment("a ,b"))
 
     assert Fragment("a ") == n.compress_fragment(Fragment("a    "))
+    assert Fragment("a ") == n.compress_fragment(Fragment("a    "), strip_left=True)
     assert Fragment("a") == n.compress_fragment(Fragment("a    "), strip_right=True)
+    assert Fragment("a") == n.compress_fragment(Fragment("   a"), strip_left=True)
+    assert Fragment(" a") == n.compress_fragment(Fragment("   a"), strip_right=True)
 
     assert Fragment(".") == n.compress_fragment(Fragment(".", bold=True, italic=True))
 
@@ -51,11 +55,16 @@ def test_compress_fragments(word):
     assert [Fragment("a.", italic=True)] \
            == list(n.compress_fragments([Fragment("a   ", italic=True), Fragment(" . ")]))
 
+    # Strip leading/trailing spaces
     assert [Fragment("con")] == list(n.compress_fragments([Fragment(""), Fragment("con"), Fragment("   ")]))
+    assert [Fragment("con")] == list(n.compress_fragments([Fragment("  con  ")]))
+    assert [Fragment("con le")] == list(n.compress_fragments([Fragment("  con"), Fragment(" le  ")]))
 
+    # include spaces in current formatting
     assert [Fragment("le mani", bold=True)] == \
            list(n.compress_fragments([Fragment("le", bold=True), Fragment("  "), Fragment("mani", bold=True)]))
 
+    # Strip spaces before dots
     assert [Fragment("ciao", italic=True), Fragment(". ciao")] == \
            list(n.compress_fragments([Fragment("ciao", italic=True), Fragment(" . ciao")]))
 
