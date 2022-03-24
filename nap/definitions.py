@@ -248,9 +248,13 @@ def parse_definitions(entries: Optional[Iterable[Entry]] = None):
             entry.fragments[0].bold = True
             entry.fragments[1].italic = False
 
-        # TODO some entries are merged together: "viécchio-vècchia"
+        # TODO some entries are merged together: "viécchio-vècchia" = "viécchio" / "vècchia"
 
         definition = entry2definition(entry)
+
+        # false-positives
+        if definition.word == "g":
+            continue
 
         # Some definitions are duplicated
         if definition.word in seen:
