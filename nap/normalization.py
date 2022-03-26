@@ -13,10 +13,10 @@ def _is_punctuation(s: str):
 
 def compress_text(text: str, strip=False):
     text = re.sub(r"\s+", " ", text)
-    # # remove spaces before dots, colons, closing parentheses
-    text = re.sub(r"\s+([.:)])", "\\1", text)
-    # add a space after commas/semicolons if needed; remove spaces before
-    text = re.sub(r"\s*([,;])(?=\w)", "\\1 ", text, flags=re.UNICODE)
+    # # remove spaces before dots, commas, colons, semicolons, closing parentheses
+    text = re.sub(r"\s+([.,:;)])", "\\1", text)
+    # add a space after commas/semicolons if needed
+    text = re.sub(r"([,;])(?=\w)", "\\1 ", text, flags=re.UNICODE)
     # remove spaces after open parentheses
     text = re.sub(r"([(])\s+", "\\1", text)
 

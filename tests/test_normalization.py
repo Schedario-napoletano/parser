@@ -73,3 +73,5 @@ def test_compress_fragments(word):
 def test_compress_html():
     # Remove spaces before dots
     assert "<i>intr</i>. far qualcosa" == n.compress_html(" <i>intr</i> . far qualcosa")
+    # Idem commas
+    assert "<i>bla</i>, far qualcosa" == n.compress_html(" <i>bla</i> , far qualcosa")
