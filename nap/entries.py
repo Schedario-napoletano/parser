@@ -1,8 +1,9 @@
+import os.path
+import re
 import string
 from typing import Tuple, List, Optional, Iterator, cast, Iterable
 
-import re
-
+import json
 import pdfplumber
 from pdfplumber.page import Page
 
@@ -44,6 +45,8 @@ COLUMN_ABSCISSES = (
     (0.65, None),
 )
 COLUMNS_COUNT = len(COLUMN_ABSCISSES)
+
+FRAGMENTS_CACHE_PATH = "fragments.jsons"
 
 IndentedFragment = Tuple[float, Fragment]
 
@@ -124,7 +127,7 @@ def parse_fragments_from_page(page: Page, skip_intro=False):
         yield from _parse_fragments_from_column(column, skip_intro=skip_intro if column_index == 0 else False)
 
 
-def parse_indented_fragments() -> Iterator[IndentedFragment]:
+def _parse_indented_fragments() -> Iterator[IndentedFragment]:
     for filename, first_page in FILES:
         print("File", filename)
 
@@ -135,6 +138,28 @@ def parse_indented_fragments() -> Iterator[IndentedFragment]:
 
                 yield from parse_fragments_from_page(page, skip_intro=is_first_page)
                 is_first_page = False
+
+
+def parse_indented_fragments(cache=True) -> Iterator[IndentedFragment]:
+    if not cache:
+        return _parse_indented_fragments()
+
+    if not os.path.isfile(FRAGMENTS_CACHE_PATH):
+        with open(FRAGMENTS_CACHE_PATH, "w") as f:
+            for indent, fragment in _parse_indented_fragments():
+                json.dump({
+                    # Ensure the text is at the beginning of the line to make the file easier to skim through by a human
+                    "_text": fragment.text,
+                    "bold": fragment.bold,
+                    "indent": indent,
+                    "italic": fragment.italic,
+                }, f, sort_keys=True, ensure_ascii=False)
+                f.write("\n")
+
+    with open(FRAGMENTS_CACHE_PATH) as f:
+        for line in f:
+            d: dict = json.loads(line)
+            yield d["indent"], Fragment(d["_text"], italic=d["italic"], bold=d["bold"])
 
 
 def parse_entries(indented_fragments: Optional[Iterable[IndentedFragment]] = None) -> Iterator[Entry]:
