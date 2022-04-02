@@ -28,7 +28,8 @@ START_TOP = 71.0
 # It should be as low as possible such that it doesn't create false-positives but also not too low so that it doesn't
 # create false-negatives.
 #                  0.0005 is too low
-INDENT_TOLERANCE = 0.001
+# suggietà: 0.00118
+INDENT_TOLERANCE = 0.0012
 
 # Minimum indentation of big letters 'A', 'B', 'C', etc.
 LETTER_MIN_INDENT = 60.0

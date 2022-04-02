@@ -3,7 +3,7 @@
 This repository contains code to extract the definitions from the two PDF files of the
 [<i>Schedario napoletano</i>][1] written by Giuseppe Giacco.
 
-This extracts 22,400 unique definitions, of which 4,946 are aliases.
+This extracts 23,174 unique definitions, of which 5,122 are aliases.
 
 [1]: http://www.vesuvioweb.com/it/2012/01/giuseppe-giacco-schedario-napoletano/
 
