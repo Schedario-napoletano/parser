@@ -214,11 +214,15 @@ def entry2definition(entry):
     derivative = False
 
     # Arbitrary threshold: above this value this is probably not a qualifier
+    # Note some words have two qualifiers: "<i>q1</i> e <i>q2</i>. (…)"
     if fragments[0].italic and len(fragments[0].text) < 20:
         prefix = fragments[0].text.strip(" .")
         qualifier, derivative = parse_qualifier(prefix, word_text=word_text)
         if qualifier:
             fragments = fragments[1:]
+            # "<i>agg</i>. blabla" -> qualifier=agg, definition = "blabla" (and not ". blabla")
+            if fragments[0].text.startswith("."):
+                fragments[0].text = fragments[0].text.lstrip(". ")
 
     # basic definition
     if derivative \
