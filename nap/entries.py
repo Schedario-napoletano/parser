@@ -29,7 +29,9 @@ START_TOP = 71.0
 # create false-negatives.
 #                  0.0005 is too low
 # suggietà: 0.00118
-INDENT_TOLERANCE = 0.0012
+# troia:    0.00125
+# sóracia:  0.00131
+INDENT_TOLERANCE = 0.0014
 
 # Minimum indentation of big letters 'A', 'B', 'C', etc.
 LETTER_MIN_INDENT = 60.0
