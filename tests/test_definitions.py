@@ -22,6 +22,18 @@ def test_file1_page1_column_1():
     ]
 
 
+def test_ll():
+    entry = Entry(
+        [Fragment("ll’, ", bold=True),
+         Fragment("v.", italic=True),
+         Fragment(" l’.  ", bold=True)], initial_letter="L")
+
+    definition = definitions.entry2definition(entry)
+    assert isinstance(definition, AliasDefinition)
+    assert definition.word == "ll’"
+    assert definition.alias_of == "l’"
+
+
 def test_alias_with_hyphen_and_space():
     entry = Entry(
         [Fragment('abbasta che-ca ', bold=True),

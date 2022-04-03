@@ -88,7 +88,7 @@ ABBREVIATIONS: Dict[str, Union[str, List[str]]] = {
     "vezz": "vezzeggiativo",
     "voc": "vocativo",
 
-    # additional, undocumented/combined ones
+    # additional, undocumented or composite ones
     "escl. d’impazienza": "esclamazione d’impazienza",
     "n.pr": "nome proprio",
     "n. pr": "nome proprio",
@@ -110,6 +110,8 @@ ABBREVIATIONS: Dict[str, Union[str, List[str]]] = {
     "agg. f": "aggettivo femminile",
     "det. pl": "articolo determinativo plurale",
     "f. s.e pl": "sostantivo femminile singolare e plurale",
+    "ant. det.": "articolo determinativo",
+
     # probably an alias of "impt" (imperativo)
     "imprt": "imperativo",
 
@@ -141,7 +143,7 @@ ABBREVIATIONS: Dict[str, Union[str, List[str]]] = {
     "tronc. e voc": "troncamento e vocativo",
 }
 
-RE_SEE_ALSO = re.compile(r"^v\s*\. +(\w[- \w]*)\s*\.?$", flags=re.UNICODE)
+RE_SEE_ALSO = re.compile(r"^v\s*\. +(\w[- \w]*’?)\s*\.?$", flags=re.UNICODE)
 
 # "abbr", "abbr.di", "abbr di", "abbr. di", "abbr . di"
 RE_ABBR = re.compile(r"^(%s)\s*((?:\.|\.?\s+)di)?$" % "|".join(re.escape(abbr) for abbr in ABBREVIATIONS),
@@ -182,10 +184,12 @@ def entry2definition(entry):
     if not word.bold:
         print(entry.as_md())
         print(entry.fragments)
+    # noinspection Assert
     assert word.bold
 
     # "hadda="
-    word_text = word.text.strip(" :=")
+    # "lu,", # "ll’,"
+    word_text = word.text.strip(" :=,")
     fragments = entry.fragments[1:]
 
     # sometimes the colon is in its own fragment
