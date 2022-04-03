@@ -58,7 +58,7 @@ def compress_fragments(fragments: Iterable[Fragment]) -> Iterator[Fragment]:
         # Note this means "<b>foo</b> <i>bar</i>" may become "<b>foo </b><i>bar</i>"
         if (fragment.bold == current_fragment.bold and fragment.italic == current_fragment.italic) \
                 or fragment.text.isspace():
-            current_fragment.text += fragment.text
+            current_fragment.append_text(fragment.text)
             continue
 
         if _is_punctuation(fragment.text):

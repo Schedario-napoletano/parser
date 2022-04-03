@@ -15,6 +15,12 @@ class Fragment:
         self.bold = False
         self.italic = False
 
+    def prepend_text(self, prefix: str):
+        self.text = prefix + self.text
+
+    def append_text(self, suffix: str):
+        self.text += suffix
+
     def copy(self):
         # noinspection PyArgumentList
         return self.__class__(text=self.text, bold=self.bold, italic=self.italic)
