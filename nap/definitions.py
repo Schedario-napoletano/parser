@@ -279,6 +279,9 @@ def parse_definition_dicts(entries: Optional[Iterable[Entry]] = None, debug=Fals
     for definition in parse_definitions(entries):
         definition_dict = definition.as_dict(debug=debug)
 
+        if not re.match(r"[-A-ZÈa-zàéèìïòóù’' ]+[!?]?$", definition_dict["word"]):
+            print("/!\\ possible parsing issue on word:", repr(definition_dict["word"]))
+
         if text := definition_dict.get("definition"):
             definition_dict["definition"] = compress_html(text)
 
