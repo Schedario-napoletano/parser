@@ -2,6 +2,7 @@ import clj
 
 from nap import definitions
 from nap.models import Fragment, Entry, AliasDefinition
+from nap.normalization import compress_fragments
 
 
 def test_file1_page1_column_1():
@@ -32,6 +33,37 @@ def test_ll():
     assert isinstance(definition, AliasDefinition)
     assert definition.word == "ll’"
     assert definition.alias_of == "l’"
+
+
+def test_bold_parenthesis_after_word():
+    entry = Entry(
+        compress_fragments([Fragment("mperechicchio ", bold=True),
+                            Fragment("(", bold=True),
+                            Fragment("corrett.", italic=True),
+                            Fragment(" ", bold=True),
+                            Fragment("’mperechicchio ", bold=True),
+                            Fragment("da", italic=True),
+                            Fragment(" ", bold=True),
+                            Fragment("’n+perechicchio): ", bold=True),
+                            Fragment("avv.", italic=True),
+                            Fragment(" ", bold=True),
+                            Fragment("blabla.")]),
+        initial_letter="M")
+
+    definition = definitions.entry2definition(entry)
+    assert definition.word == "mperechicchio"
+
+    entry = Entry(
+        compress_fragments([Fragment("ago ", bold=True),
+                            Fragment("(", bold=True),
+                            Fragment("pl", italic=True),
+                            Fragment(". ", bold=True),
+                            Fragment("aghe): ", bold=True),
+                            Fragment("ago.")]),
+        initial_letter="A")
+
+    definition = definitions.entry2definition(entry)
+    assert definition.word == "ago"
 
 
 def test_alias_with_hyphen_and_space():

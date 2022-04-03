@@ -1,7 +1,7 @@
 from typing import Optional, Tuple, Dict, Union, List, Iterable, Set
 import re
 
-from nap.models import Qualifier, AliasDefinition, DerivativeDefinition, RawDefinition, Entry
+from nap.models import Qualifier, AliasDefinition, DerivativeDefinition, RawDefinition, Entry, Fragment
 from nap.entries import parse_entries
 from nap.normalization import compress_html
 
@@ -189,7 +189,8 @@ def entry2definition(entry):
 
     # "hadda="
     # "lu,", # "ll’,"
-    word_text = word.text.strip(" :=,")
+    # "+++augurio"
+    word_text = word.text.strip(" :").lstrip("+").rstrip("=,")
     fragments = entry.fragments[1:]
 
     # sometimes the colon is in its own fragment
@@ -197,17 +198,26 @@ def entry2definition(entry):
         # skip it
         fragments = fragments[1:]
 
-    if not fragments:
-        if m := re.match(r"^(\w+): (.+)$", word_text, flags=re.UNICODE):
-            # "**chessà: chi sa.**"
-            word_text = m.group(1)
-            word.text = m.group(2)
-            fragments = [word]
-        elif m := re.match(r"^(\w+) v\. (\w+)\.?$", word_text, flags=re.UNICODE):
-            # **felariéllo v. filariéllo.**
+    # sometimes the whole definition or its beginning is in a single bold fragment
+    # "<b>unu: uno</b> <i>bla bla</i> bla."
+    if m := re.match(r"^(\w+): (.+)$", word_text, flags=re.UNICODE):
+        # "<b>chessà: chi sa.</b>"
+        word_text = m.group(1)
+        fragments = [Fragment(m.group(2))] + fragments
+    elif not fragments:
+        if m := re.match(r"^(\w+) v\. (\w+)\.?$", word_text, flags=re.UNICODE):
+            # <b>felariéllo v. filariéllo.</b>
             return AliasDefinition(m.group(1), entry.initial_letter, m.group(2))
         else:
             raise RuntimeError("Empty definition: %s" % entry.as_md())
+
+    # sometimes there’s a parenthesis between the word and the definition, and the opening parenthesis is bold
+    # e.g. "<b>bla (</b> <i>something)</i>: blabla.". Variant: "<b>pepella: 1)</b> ..."
+    for definition_prefix in ("(", ": 1)"):
+        if word_text.endswith(definition_prefix):
+            # move the prefix in the next fragment
+            word_text = word_text[:-len(definition_prefix)].rstrip()
+            fragments[0].prepend_text(definition_prefix)
 
     plain_text = " ".join(fragment.text for fragment in fragments).strip()
 
