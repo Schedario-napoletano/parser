@@ -1,8 +1,8 @@
-from typing import Optional, Tuple, Dict, Union, List, Iterable, Set
 import re
+from typing import Optional, Tuple, Dict, Union, List, Iterable
 
-from nap.models import Qualifier, AliasDefinition, DerivativeDefinition, RawDefinition, Entry, Fragment
 from nap.entries import parse_entries
+from nap.models import Qualifier, AliasDefinition, DerivativeDefinition, RawDefinition, Entry, Fragment, BaseDefinition
 from nap.normalization import compress_html
 
 ABBREVIATIONS: Dict[str, Union[str, List[str]]] = {
@@ -65,7 +65,7 @@ ABBREVIATIONS: Dict[str, Union[str, List[str]]] = {
     "part": "participio",
     "pl": "plurale",
     "poss": "aggettivo e/o pronome possessivo",
-    "pr": "proverbio",
+    "pr": "proverbio",  # ?
     "prep": "preposizione",
     "pres": "presente",
     "pron": ["pronome", "pronominale"],
@@ -149,6 +149,8 @@ RE_SEE_ALSO = re.compile(r"^v\s*\. +(\w[- \w]*’?)\s*\.?$", flags=re.UNICODE)
 RE_ABBR = re.compile(r"^(%s)\s*((?:\.|\.?\s+)di)?$" % "|".join(re.escape(abbr) for abbr in ABBREVIATIONS),
                      flags=re.UNICODE)
 
+RE_ALT_END_SLASH = re.compile(r"(.+)([eio])/([aeio])$")
+
 
 def parse_qualifier(s: str, word_text: str) -> Tuple[Optional[str], bool]:
     """
@@ -165,6 +167,9 @@ def parse_qualifier(s: str, word_text: str) -> Tuple[Optional[str], bool]:
 
         if qualifier == "da":
             return "da", True
+
+        if qualifier == "vedere":
+            return None, True
 
         if isinstance(qualifier, list):
             if abbr == "avv":
@@ -247,11 +252,69 @@ def entry2definition(entry) -> BaseDefinition:
     return RawDefinition(word_text, entry.initial_letter, fragments, qualifier=qualifier)
 
 
-def parse_definitions(entries: Optional[Iterable[Entry]] = None):
+def explode_definition(definition: BaseDefinition) -> list[BaseDefinition]:
+    """
+    Explode a definition. In most cases, this results in a list with only this definition, but in some cases the
+    definition includes multiple words; in this case the first one holds the definition unchanged, while the other(s)
+    are aliased to it.
+
+    For example "nicchio/a" becomes "nicchio" + an alias "nicchia".
+    """
+    if definition.qualifier is None:
+        # nicchio/a, passaggiere/o
+        if m := RE_ALT_END_SLASH.match(definition.word):
+            root, end1, end2 = m.groups()
+
+            definition.word = root + end1
+            return [
+                definition,
+                definition.aliased_as(root + end2)
+            ]
+
+    # Specific case
+    if definition.word == "carnale/o-a" and definition.qualifier == "aggettivo":
+        definition.word = "carnale"
+        return [
+            definition,
+            definition.aliased_as("carnalo"),
+            definition.aliased_as("carnala"),
+        ]
+
+    if "/" in definition.word:
+        print(f"Skipping suspicious word {definition.word} ({definition.qualifier})")
+        return []
+
+    # _o-a -> _o + _a
+    # _e-o
+    if m := re.match(r"(.+)([eo])-([ao])$", definition.word):
+        # Qualifiers without gender
+        if definition.qualifier in {
+            None, "aggettivo", "alterazione",
+            "aggettivo numerale cardinale",
+        }:
+            print("SPLIT", definition.word, definition.qualifier)
+
+            root, end1, end2 = m.groups(1)
+
+            definition.word = root + end1
+
+            return [
+                definition,
+                definition.aliased_as(root + end2)
+            ]
+
+    # TODO others: "viécchio-vècchia" = "viécchio" / "vècchia"
+    #
+    if "-" in definition.word:
+        print("AAA", definition)
+
+    return [definition]
+
+
+def _parse_definitions(entries: Optional[Iterable[Entry]] = None):
+    """Parse definitions, but don't dedupe them. See parse_definitions() instead."""
     if entries is None:
         entries = parse_entries()
-
-    seen: Set[str] = set()
 
     for entry in entries:
         first_text = entry.fragments[0].text.strip()
@@ -266,21 +329,31 @@ def parse_definitions(entries: Optional[Iterable[Entry]] = None):
             entry.fragments[0].bold = True
             entry.fragments[1].italic = False
 
-        # TODO some entries are merged together: "viécchio-vècchia" = "viécchio" / "vècchia"
-
         definition = entry2definition(entry)
 
-        # false-positives
-        if definition.word == "g":
+        # false-positives: "g", "nz-", "mb-"
+        if definition.word == "g" or definition.word.endswith("-"):
             continue
 
+        # for debugging
+        definition._fragments = entry.fragments
+
+        # Some entries are merged together
+        yield from explode_definition(definition)
+
+        yield definition
+
+
+def parse_definitions(entries: Optional[Iterable[Entry]] = None):
+    seen: set[str] = set()
+
+    for definition in _parse_definitions(entries):
         # Some definitions are duplicated
         if definition.word in seen:
             continue
 
         seen.add(definition.word)
 
-        definition._fragments = entry.fragments
         yield definition
 
 
