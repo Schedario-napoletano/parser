@@ -40,6 +40,8 @@ def test_compress_fragments(word):
     assert [Fragment("a b")] == list(n.compress_fragments([Fragment("a"), Fragment(" b")]))
     assert [Fragment("a b")] == list(n.compress_fragments([Fragment("a   "), Fragment(" b")]))
 
+    assert [Fragment("a-b")] == list(n.compress_fragments([Fragment("a"), Fragment("-", bold=True), Fragment("b")]))
+
     assert [Fragment("a b", italic=True)] \
            == list(n.compress_fragments([Fragment("a   ", italic=True), Fragment(" b", italic=True)]))
 

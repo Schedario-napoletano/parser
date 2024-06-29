@@ -61,7 +61,7 @@ def compress_fragments(fragments: Iterable[Fragment]) -> Iterator[Fragment]:
             current_fragment.append_text(fragment.text)
             continue
 
-        if _is_punctuation(fragment.text):
+        if _is_punctuation(fragment.text) or fragment.text == "-":
             # Don't leave punctuation alone
             # Note this could be challenged: "<i>foo</i>." may be better than "<i>foo.</i>".
             current_fragment.text = current_fragment.text.rstrip() + fragment.text.lstrip()
