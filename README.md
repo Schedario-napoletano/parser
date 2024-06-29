@@ -23,3 +23,7 @@ to `definitions.json`.
 The script supports additional options:
 
     poetry run python extract.py [--dry-run] [--diff]
+
+* `--dry-run`: don't actually write the definitions in a file
+* `--diff`: print some diff between the existing definitions (if any) and the new ones. This is useful to see changes
+  when editing the code logic.
