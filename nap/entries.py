@@ -195,7 +195,7 @@ def parse_entries(indented_fragments: Optional[Iterable[IndentedFragment]] = Non
                 continue
 
             current_letter = stripped_text
-            print("Letter:", cast(str, current_letter))
+            print("Letter:", current_letter)
             known_letters.remove(cast(str, current_letter))
             continue
 

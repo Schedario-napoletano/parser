@@ -179,12 +179,11 @@ def parse_qualifier(s: str, word_text: str) -> Tuple[Optional[str], bool]:
     return None, False
 
 
-def entry2definition(entry):
+def entry2definition(entry) -> BaseDefinition:
     word = entry.fragments[0]
     if not word.bold:
         print(entry.as_md())
         print(entry.fragments)
-    # noinspection Assert
     assert word.bold
 
     # "hadda="
