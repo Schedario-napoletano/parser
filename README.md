@@ -17,3 +17,9 @@ The output JSON can then be used to feed [the website][w]. If `<path>` is not pr
 to `definitions.json`.
 
 [w]: https://github.com/Schedario-napoletano/website/tree/main/_data
+
+### Advanced usage
+
+The script supports additional options:
+
+    poetry run python extract.py [--dry-run] [--diff]
