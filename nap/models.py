@@ -83,6 +83,23 @@ class BaseDefinition:
             d["_fragments"] = [f.as_md() for f in self._fragments]
         return d
 
+    def aliased_as(self, alias: str, qualifier: Optional[Qualifier] = None):
+        target_word = self.word
+        if isinstance(self, AliasDefinition):
+            target_word = self.alias_of
+
+        alias_ = AliasDefinition(
+            alias_of=target_word,
+            word=alias,
+            qualifier=qualifier or self.qualifier,
+            initial_letter=alias[0].upper()
+        )
+        alias_._fragments = self._fragments
+        return alias_
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__}: {self.word} ({self.qualifier})>"
+
 
 class RawDefinition(BaseDefinition):
     definition_type = "default"
