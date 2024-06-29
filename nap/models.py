@@ -109,13 +109,17 @@ class RawDefinition(BaseDefinition):
         super().__init__(word, initial_letter, qualifier=qualifier)
         self.fragments = fragments
 
+    @property
+    def definition(self):
+        return ' '.join(fragment.as_html() for fragment in self.fragments)
+
     def as_md(self):
         q = f"_{self.qualifier}_ " if self.qualifier else ""
         return f"{self.word}: {q}{' '.join(fragment.as_md() for fragment in self.fragments)}"
 
     def as_dict(self, debug=False):
         d = super().as_dict(debug=debug)
-        d["definition"] = ' '.join(fragment.as_html() for fragment in self.fragments)
+        d["definition"] = self.definition
         return d
 
 

@@ -260,19 +260,24 @@ def explode_definition(definition: BaseDefinition) -> list[BaseDefinition]:
 
     For example "nicchio/a" becomes "nicchio" + an alias "nicchia".
     """
-    if definition.qualifier is None:
-        # nicchio/a, passaggiere/o
-        if m := RE_ALT_END_SLASH.match(definition.word):
-            root, end1, end2 = m.groups()
+    word = definition.word.replace("–", "-")
+    qualifier = definition.qualifier
 
-            definition.word = root + end1
-            return [
-                definition,
-                definition.aliased_as(root + end2)
-            ]
+    if (
+            # Avoid unnecessary comparisons
+            not (set(word) & {"-", "/", ","})
+
+            # These are not declinations
+            or word in {"votta-votta", "ih, gioia", }
+    ):
+        return [definition]
+
+    # Some declined words have declined definitions as well
+    if isinstance(definition, RawDefinition) and "-" in definition.definition:
+        return [definition]
 
     # Specific case
-    if definition.word == "carnale/o-a" and definition.qualifier == "aggettivo":
+    if word == "carnale/o-a" and qualifier == "aggettivo":
         definition.word = "carnale"
         return [
             definition,
@@ -280,33 +285,132 @@ def explode_definition(definition: BaseDefinition) -> list[BaseDefinition]:
             definition.aliased_as("carnala"),
         ]
 
-    if "/" in definition.word:
-        print(f"Skipping suspicious word {definition.word} ({definition.qualifier})")
-        return []
+    if isinstance(definition, AliasDefinition) and "-" not in word and ", " in word:
+        words = word.split(", ")
+        definition.word = words[0]
+        return [definition] + [
+            definition.aliased_as(word)
+            for word in words[1:]
+        ]
 
-    # _o-a -> _o + _a
-    # _e-o
-    if m := re.match(r"(.+)([eo])-([ao])$", definition.word):
-        # Qualifiers without gender
-        if definition.qualifier in {
-            None, "aggettivo", "alterazione",
-            "aggettivo numerale cardinale",
-        }:
-            print("SPLIT", definition.word, definition.qualifier)
+    if words := {
+        "abbasta che-ca": ["abbasta che", "abbasta ca"],
+        "avasta che-ca": ["avasta che", "avasta ca"],
+        "commara-e, commarella": ["commara", "commare", "commarella"],
+        "creianza, creiaturo-a": ["creianza", "creiaturo", "creiatura"],
+        "falzariga, falzarica": ["falzariga", "falzarica"],
+        "nchiova, nchiovatélla": ["nchiova", "nchiovatélla"],
+        "sciò-sciòmmo": ["sciò", "sciòmmo"],
+        "tiénnero-tènnera": ["tiénnero", "tènnera"],
+        "Nannina-Nanninèlla": ["Nannina", "Nanninèlla"],
+    }.get(word):
+        definition.word = words[0]
+        return [definition] + [
+            definition.aliased_as(word)
+            for word in words[1:]
+        ]
 
+    if word in {
+        "liésto-lèsta",
+        "liticariello-liticarella",
+        "litratto-litrattiello",
+        "lìzzeto-lézzeta",
+        "muscillo-muscella",
+        "Nannina-Nanninèlla",
+        "nigro-negra",
+        "nnutto-nnotta",
+        "nzevuso-nzevosa",
+        "sciò-sciòmmo",
+        "strillazzàro-strillazzèra",
+        "tiénnero-tènnera",
+    }:
+        word1, word2 = word.split("-")
+        definition.word = word1
+        return [
+            definition,
+            definition.aliased_as(word2),
+        ]
+
+    # nicchio/a, passaggiere/o
+    if m := RE_ALT_END_SLASH.match(word):
+        if definition.qualifier is None:
             root, end1, end2 = m.groups()
 
             definition.word = root + end1
-
             return [
                 definition,
                 definition.aliased_as(root + end2)
             ]
 
-    # TODO others: "viécchio-vècchia" = "viécchio" / "vècchia"
-    #
-    if "-" in definition.word:
-        print("AAA", definition)
+    if "/" in word:
+        print(f"Skipping suspicious word {word} ({qualifier})")
+        return []
+
+    # Be careful about grammar here: the feminine form of -uolo is -ola, not -uola.
+    if m := \
+            (qualifier in {
+                # Qualifiers without gender, meaning we can keep them for both forms
+                None,
+                "accrescitivo",
+                "aggettivo", "aggettivo numerale cardinale", "aggettivo e participio",
+                "aggettivo e/o pronome indefinito",
+                "alterazione",
+                "avverbio",
+            } and (
+                     # -o/-a and similar: uttavo-a, cantalesia-o
+                     re.match(r"(.+)([aeo])-([aeo])$", word)
+                     # # vecchiariello-ella, vicchiariéllo-èlla, scurdariello-èlla -> TODO verify if it's -ella or -iella
+                     # or re.match(r"(.+i)([eé]llo)-([eè]lla)$", word)
+
+                     # -uosto/-osta: vuosto-vòsta
+                     or re.match(r"(.+)(uosto)-(òsta)$", word)
+                     # -uso/-osa: vuzzuluso-osa, zuzzuso-ósa, merruoietuso-osa
+                     # -oso/-osa: porposo-ósa
+                     or re.match(r"(.+[ibcdfglmnprstvz])([ouù]so)-([oó]sa)$", word)
+                     # -isco/-esca: veperìsco-ésca
+                     or re.match(r"(.+)(ìsco)-(ésca)$", word)
+                     # -iuolo/-iola: stuppaiuolo-iòla
+                     or re.match(r"(.+)(iuolo)-(iòla)$", word)
+                     # -uolo/-ola: vasciaiuolo-òla
+                     or re.match(r"(.+)(uolo)-([oò]la)$", word)
+                     # -ulo/-ola: pressarùlo-òla
+                     or re.match(r"(.+)(ùlo)-(òla)$", word)
+                     # -illo/-ella: tummulillo-ella, teccatìllo-ella, peccerillo-élla
+                     or re.match(r"(.+[bcdfglmnprstvz])([iì]llo)-([eé]lla)$", word)
+                     # -isso/-essa: scarfisso-éssa
+                     or re.match(r"(.+)(isso)-(éssa)$", word)
+                     # -itro/-etra: pollitro-etra
+                     or re.match(r"(.+)(itro)-(etra)$", word)
+                     # -utto/-otta: scurrùtto-òtta
+                     or re.match(r"(.+)(ùtto)-(òtta)$", word)
+                     # -olo/-ulella: zìtolo-ulélla
+                     or re.match(r"(.+)(olo)-(ulélla)$", word)
+
+                     # cc + -iullo/-olla: utricciullo-olla
+                     or re.match(r"(.+c)(iullo)-(olla)$", word)
+             )
+            ) or \
+            (qualifier in {
+                "sostantivo maschile", "sostantivo femminile",
+            } and (
+                     # maschile: trainiero-e, spitaliere-o, vestiàmma-e, piribìsso-i, pulizzastivale-i
+                     # femminile: tiritosta-o, visciòla-e
+                     re.match(r"(.+)([aeo])-([aeio])$", word)
+             )
+            ):
+        # print("SPLIT", word, definition.qualifier)
+
+        root, end1, end2 = m.groups()
+        definition.word = root + end1
+
+        return [
+            definition,
+            definition.aliased_as(root + end2)
+        ]
+
+    if "-" in word:
+        print("Possible split:", word, f"[{definition.qualifier}]" if definition.qualifier else "",
+              f"=> {definition.definition}" if isinstance(definition, RawDefinition) else "")
 
     return [definition]
 
