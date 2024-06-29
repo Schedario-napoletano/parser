@@ -76,3 +76,12 @@ def test_alias_with_hyphen_and_space():
     assert isinstance(definition, AliasDefinition)
     assert definition.word == "abbasta che-ca"
     assert definition.alias_of == "basta che-ca"
+
+
+def test_alias_aliased_as():
+    d1 = AliasDefinition(alias_of="foo", word="bar", initial_letter="B")
+    d2 = d1.aliased_as("qux")
+    assert isinstance(d2, AliasDefinition)
+    assert d2.word == "qux"
+    assert d2.alias_of == "foo"
+    assert d2.initial_letter == "Q"

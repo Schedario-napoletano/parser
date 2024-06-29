@@ -68,12 +68,14 @@ def compress_fragments(fragments: Iterable[Fragment]) -> Iterator[Fragment]:
             continue
 
         current_fragment = compress_fragment(current_fragment, strip=True)
+        assert current_fragment is not None
         if current_fragment.text:
             yield current_fragment
         current_fragment = fragment
 
     if current_fragment:
         current_fragment = compress_fragment(current_fragment, strip=True)
+        assert current_fragment is not None
         if current_fragment.text:
             yield current_fragment
 

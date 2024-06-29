@@ -294,7 +294,7 @@ def explode_definition(definition: BaseDefinition) -> list[BaseDefinition]:
         }:
             print("SPLIT", definition.word, definition.qualifier)
 
-            root, end1, end2 = m.groups(1)
+            root, end1, end2 = m.groups()
 
             definition.word = root + end1
 
